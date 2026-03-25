@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, flash
 import sqlite3
+import os
 
 app = Flask(__name__)
 app.secret_key = "chave_secreta"
@@ -51,7 +52,7 @@ def agenda():
     data = request.form["data"]
     horario = request.form["horario"]
 
-    # ⏰ Limite de horário
+    # Limite de horário
     if horario < "08:00" or horario > "22:00":
         flash("⚠️ Horário permitido apenas entre 08:00 e 22:00")
         return redirect("/")
@@ -59,7 +60,7 @@ def agenda():
     conexao = sqlite3.connect("agenda.db")
     cursor = conexao.cursor()
 
-    # 🚨 Verificar conflito
+    # Verificar conflito
     cursor.execute(
         "SELECT * FROM agendamentos WHERE data = ? AND horario = ?",
         (data, horario)
@@ -70,7 +71,6 @@ def agenda():
         flash("⚠️ Horário já reservado! Escolha outro.")
         return redirect("/")
 
-    # Inserir
     cursor.execute(
         "INSERT INTO agendamentos (nome, data, horario) VALUES (?, ?, ?)",
         (nome, data, horario)
@@ -112,7 +112,7 @@ def editar(id):
     return render_template("editar.html", agendamento=agendamento)
 
 # -----------------------------
-# Atualizar (COM VALIDAÇÃO)
+# Atualizar
 # -----------------------------
 @app.route("/atualizar/<int:id>", methods=["POST"])
 def atualizar(id):
@@ -122,7 +122,7 @@ def atualizar(id):
     conexao = sqlite3.connect("agenda.db")
     cursor = conexao.cursor()
 
-    # 🚨 evitar conflito ao editar
+    # evitar conflito
     cursor.execute("""
         SELECT * FROM agendamentos 
         WHERE data = ? AND horario = ? AND id != ?
@@ -145,7 +145,8 @@ def atualizar(id):
     return redirect("/")
 
 # -----------------------------
-# Rodar
+# RODAR NO RENDER (IMPORTANTE)
 # -----------------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
