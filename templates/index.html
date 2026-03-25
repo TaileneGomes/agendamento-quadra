@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Agendamento da Quadra</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+<h1>🏟️ Agendamento da Quadra</h1>
+
+<!-- mensagens -->
+{% with messages = get_flashed_messages() %}
+  {% for msg in messages %}
+    <div class="mensagem sucesso">{{ msg }}</div>
+  {% endfor %}
+{% endwith %}
+
+<form action="/agenda" method="post">
+    <label>Nome do morador:</label>
+    <input type="text" name="nome" required>
+
+    <label>Data:</label>
+    <input type="date" name="data" required>
+
+    <label>Horário:</label>
+    <input type="time" name="horario" required>
+
+    <button type="submit">Agendar</button>
+</form>
+
+<h2>📅 Agendamentos</h2>
+
+<ul>
+{% for ag in agendamentos %}
+<li>
+    <strong>👤 {{ ag[1] }}</strong><br>
+    📆 {{ ag[2] }} ⏰ {{ ag[3] }}
+
+    <div style="margin-top:10px;">
+        <a href="/editar/{{ ag[0] }}">✏️ Editar</a> |
+        <a href="/cancelar/{{ ag[0] }}" onclick="return confirm('Tem certeza?')">
+            ❌ Cancelar
+        </a>
+    </div>
+</li>
+{% endfor %}
+</ul>
+
+</div>
+
+</body>
+</html>

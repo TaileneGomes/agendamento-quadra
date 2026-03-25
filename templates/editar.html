@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+<h1>Editar Agendamento</h1>
+
+<form action="/atualizar/{{ agendamento[0] }}" method="post">
+
+    <label>Data:</label>
+    <input type="date" name="data" value="{{ agendamento[2] }}" required>
+
+    <label>Horário:</label>
+    <input type="time" name="horario" value="{{ agendamento[3] }}" required>
+
+    <button type="submit">Salvar</button>
+
+</form>
+
+<br>
+<a href="/">⬅ Voltar</a>
+
+</div>
+
+</body>
+</html>
