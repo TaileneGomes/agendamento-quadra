@@ -6,11 +6,12 @@ app = Flask(__name__)
 app.secret_key = "chave_secreta"
 
 # -----------------------------
-# Criar banco de dados
+# Criar banco automaticamente
 # -----------------------------
 def criar_banco():
     conexao = sqlite3.connect("agenda.db")
     cursor = conexao.cursor()
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS agendamentos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,9 +20,11 @@ def criar_banco():
             horario TEXT NOT NULL
         )
     """)
+
     conexao.commit()
     conexao.close()
 
+# chama ao iniciar
 criar_banco()
 
 # -----------------------------
@@ -33,8 +36,8 @@ def index():
     cursor = conexao.cursor()
 
     cursor.execute("""
-        SELECT id, nome, data, horario 
-        FROM agendamentos 
+        SELECT id, nome, data, horario
+        FROM agendamentos
         ORDER BY data, horario
     """)
 
@@ -60,7 +63,7 @@ def agenda():
     conexao = sqlite3.connect("agenda.db")
     cursor = conexao.cursor()
 
-    # Verificar conflito
+    # Verifica conflito
     cursor.execute(
         "SELECT * FROM agendamentos WHERE data = ? AND horario = ?",
         (data, horario)
@@ -68,7 +71,7 @@ def agenda():
 
     if cursor.fetchone():
         conexao.close()
-        flash("⚠️ Horário já reservado! Escolha outro.")
+        flash("⚠️ Horário já reservado!")
         return redirect("/")
 
     cursor.execute(
@@ -107,8 +110,8 @@ def editar(id):
 
     cursor.execute("SELECT * FROM agendamentos WHERE id = ?", (id,))
     agendamento = cursor.fetchone()
-
     conexao.close()
+
     return render_template("editar.html", agendamento=agendamento)
 
 # -----------------------------
@@ -122,15 +125,15 @@ def atualizar(id):
     conexao = sqlite3.connect("agenda.db")
     cursor = conexao.cursor()
 
-    # evitar conflito
+    # evita conflito ao editar
     cursor.execute("""
-        SELECT * FROM agendamentos 
+        SELECT * FROM agendamentos
         WHERE data = ? AND horario = ? AND id != ?
     """, (data, horario, id))
 
     if cursor.fetchone():
         conexao.close()
-        flash("⚠️ Esse horário já está reservado!")
+        flash("⚠️ Esse horário já está ocupado!")
         return redirect("/")
 
     cursor.execute(
@@ -145,7 +148,7 @@ def atualizar(id):
     return redirect("/")
 
 # -----------------------------
-# RODAR NO RENDER (IMPORTANTE)
+# RODAR NO RENDER (ESSENCIAL)
 # -----------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
