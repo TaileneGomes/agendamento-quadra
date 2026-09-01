@@ -71,7 +71,7 @@ label {
   margin-bottom: 6px;
 }
 
-input {
+input, select {
   width: 100%;
   padding: 11px 12px;
   margin-bottom: 16px;
@@ -82,7 +82,7 @@ input {
   color: var(--texto);
 }
 
-input:focus {
+input:focus, select:focus {
   outline: none;
   border-color: var(--verde);
   background: var(--superficie);
@@ -107,7 +107,7 @@ h2 {
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--verde-escuro);
-  margin-bottom: 12px;
+  margin: 0;
 }
 
 ul { list-style: none; padding: 0; margin: 0; }
@@ -133,21 +133,51 @@ li {
 }
 
 .agendamento-info span {
+  display: block;
   font-size: 0.85rem;
   color: var(--texto-suave);
 }
 
-.acoes { display: flex; gap: 14px; white-space: nowrap; }
+.acoes { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 
-.acoes a {
+.acoes > a {
   font-size: 0.85rem;
   text-decoration: none;
-  color: var(--texto-suave);
+  color: var(--verde);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.form-cancelar {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.form-cancelar input {
+  width: 64px;
+  padding: 6px 8px;
+  margin: 0;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+
+.form-cancelar button {
+  width: auto;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  margin: 0;
+  background: transparent;
+  color: var(--terracota);
+  border: 1px solid var(--terracota);
   font-weight: 600;
 }
 
-.acoes a:first-child { color: var(--verde); }
-.acoes a:last-child { color: var(--terracota); }
+.form-cancelar button:hover { background: var(--erro-bg); }
 
 .vazio {
   text-align: center;
@@ -168,6 +198,43 @@ li {
 
 .sucesso { background: var(--sucesso-bg); color: var(--sucesso-texto); }
 .erro { background: var(--erro-bg); color: var(--erro-texto); }
+
+.pos-agendamento {
+  background: var(--superficie);
+  border: 1px solid var(--verde);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.pos-agendamento p { margin: 0 0 10px; }
+
+.whatsapp {
+  display: inline-block;
+  background: var(--verde);
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 8px 14px;
+  border-radius: 6px;
+}
+
+.rodape-lista {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.contador {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+  background: var(--borda);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
 
 .voltar {
   display: inline-block;
