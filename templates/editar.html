@@ -2,7 +2,8 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Editar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Editar Agendamento</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -10,21 +11,19 @@
 <div class="container">
 
 <h1>Editar Agendamento</h1>
+<p class="subtitulo">{{ agendamento[1] }}</p>
 
 <form action="/atualizar/{{ agendamento[0] }}" method="post">
-
-    <label>Data:</label>
+    <label>Data</label>
     <input type="date" name="data" value="{{ agendamento[2] }}" required>
 
-    <label>Horário:</label>
+    <label>Horário</label>
     <input type="time" name="horario" value="{{ agendamento[3] }}" required>
 
     <button type="submit">Salvar</button>
-
 </form>
 
-<br>
-<a href="/">⬅ Voltar</a>
+<a class="voltar" href="/">← Voltar</a>
 
 </div>
 
