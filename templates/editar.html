@@ -11,14 +11,27 @@
 <div class="container">
 
 <h1>Editar Agendamento</h1>
-<p class="subtitulo">{{ agendamento[1] }}</p>
+<p class="subtitulo">{{ agendamento[1] }} — {{ agendamento[2] }}, nº {{ agendamento[3] }}</p>
+
+{% with messages = get_flashed_messages() %}
+  {% for msg in messages %}
+    <div class="mensagem erro">{{ msg }}</div>
+  {% endfor %}
+{% endwith %}
 
 <form action="/atualizar/{{ agendamento[0] }}" method="post">
+    <label>Código do agendamento</label>
+    <input type="text" name="codigo" maxlength="4" required>
+
     <label>Data</label>
-    <input type="date" name="data" value="{{ agendamento[2] }}" required>
+    <input type="date" name="data" value="{{ agendamento[4] }}" min="{{ data_minima }}" required>
 
     <label>Horário</label>
-    <input type="time" name="horario" value="{{ agendamento[3] }}" required>
+    <select name="horario" required>
+        {% for h in horarios %}
+        <option value="{{ h }}" {{ 'selected' if h == agendamento[5] else '' }}>{{ h }}</option>
+        {% endfor %}
+    </select>
 
     <button type="submit">Salvar</button>
 </form>
