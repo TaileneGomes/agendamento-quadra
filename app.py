@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, flash, session, Response
-import sqlite3
+import psycopg2
 import os
 import random
 import csv
@@ -10,18 +10,19 @@ from urllib.parse import quote
 app = Flask(__name__)
 app.secret_key = "chave_secreta"
 
-HORARIOS_DISPONIVEIS = [f"{h:02d}:00" for h in range(8, 22)]  # 08:00 até 21:00
+HORARIOS_DISPONIVEIS = [f"{h:02d}:00" for h in range(8, 22)]
 
-# -----------------------------
-# Criar/migrar banco automaticamente
-# -----------------------------
+DATABASE_URL = os.environ["DATABASE_URL"]
+
+def conectar():
+    return psycopg2.connect(DATABASE_URL)
+
 def criar_banco():
-    conexao = sqlite3.connect("agenda.db")
+    conexao = conectar()
     cursor = conexao.cursor()
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS agendamentos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             nome TEXT NOT NULL,
             rua TEXT NOT NULL DEFAULT '',
             numero_casa TEXT NOT NULL DEFAULT '',
@@ -30,16 +31,6 @@ def criar_banco():
             codigo TEXT NOT NULL DEFAULT ''
         )
     """)
-
-    # migração leve, caso o banco já exista sem as colunas novas
-    colunas_existentes = [c[1] for c in cursor.execute("PRAGMA table_info(agendamentos)")]
-    if "rua" not in colunas_existentes:
-        cursor.execute("ALTER TABLE agendamentos ADD COLUMN rua TEXT NOT NULL DEFAULT ''")
-    if "numero_casa" not in colunas_existentes:
-        cursor.execute("ALTER TABLE agendamentos ADD COLUMN numero_casa TEXT NOT NULL DEFAULT ''")
-    if "codigo" not in colunas_existentes:
-        cursor.execute("ALTER TABLE agendamentos ADD COLUMN codigo TEXT NOT NULL DEFAULT ''")
-
     conexao.commit()
     conexao.close()
 
@@ -48,12 +39,9 @@ criar_banco()
 def gerar_codigo():
     return str(random.randint(1000, 9999))
 
-# -----------------------------
-# Página inicial
-# -----------------------------
 @app.route("/")
 def index():
-    conexao = sqlite3.connect("agenda.db")
+    conexao = conectar()
     cursor = conexao.cursor()
 
     cursor.execute("""
@@ -65,20 +53,19 @@ def index():
 
     mes_atual = date.today().strftime("%Y-%m")
     cursor.execute(
-        "SELECT COUNT(*) FROM agendamentos WHERE data LIKE ?",
+        "SELECT COUNT(*) FROM agendamentos WHERE data LIKE %s",
         (mes_atual + "%",)
     )
     total_mes = cursor.fetchone()[0]
     conexao.close()
 
-    # mostra o código e o link do WhatsApp logo após um agendamento novo
     ultimo = None
     ultimo_id = session.pop("ultimo_agendamento_id", None)
     ultimo_codigo = session.pop("ultimo_codigo", None)
     if ultimo_id:
-        conexao = sqlite3.connect("agenda.db")
+        conexao = conectar()
         cursor = conexao.cursor()
-        cursor.execute("SELECT nome, data, horario FROM agendamentos WHERE id = ?", (ultimo_id,))
+        cursor.execute("SELECT nome, data, horario FROM agendamentos WHERE id = %s", (ultimo_id,))
         row = cursor.fetchone()
         conexao.close()
         if row:
@@ -97,9 +84,6 @@ def index():
         ultimo=ultimo
     )
 
-# -----------------------------
-# Novo agendamento
-# -----------------------------
 @app.route("/agenda", methods=["POST"])
 def agenda():
     nome = request.form["nome"].strip()
@@ -122,11 +106,11 @@ def agenda():
         flash("⚠️ Não é possível agendar em uma data que já passou")
         return redirect("/")
 
-    conexao = sqlite3.connect("agenda.db")
+    conexao = conectar()
     cursor = conexao.cursor()
 
     cursor.execute(
-        "SELECT * FROM agendamentos WHERE data = ? AND horario = ?",
+        "SELECT * FROM agendamentos WHERE data = %s AND horario = %s",
         (data_str, horario)
     )
     if cursor.fetchone():
@@ -136,11 +120,11 @@ def agenda():
 
     codigo = gerar_codigo()
     cursor.execute(
-        "INSERT INTO agendamentos (nome, rua, numero_casa, data, horario, codigo) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO agendamentos (nome, rua, numero_casa, data, horario, codigo) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
         (nome, rua, numero_casa, data_str, horario, codigo)
     )
+    novo_id = cursor.fetchone()[0]
     conexao.commit()
-    novo_id = cursor.lastrowid
     conexao.close()
 
     session["ultimo_agendamento_id"] = novo_id
@@ -149,16 +133,13 @@ def agenda():
     flash(f"✅ Agendamento realizado com sucesso! Guarde seu código: {codigo}")
     return redirect("/")
 
-# -----------------------------
-# Cancelar (exige código)
-# -----------------------------
 @app.route("/cancelar/<int:id>", methods=["POST"])
 def cancelar(id):
     codigo = request.form.get("codigo", "").strip()
 
-    conexao = sqlite3.connect("agenda.db")
+    conexao = conectar()
     cursor = conexao.cursor()
-    cursor.execute("SELECT codigo FROM agendamentos WHERE id = ?", (id,))
+    cursor.execute("SELECT codigo FROM agendamentos WHERE id = %s", (id,))
     row = cursor.fetchone()
 
     if not row:
@@ -171,21 +152,18 @@ def cancelar(id):
         flash("⚠️ Código incorreto. O cancelamento não foi feito")
         return redirect("/")
 
-    cursor.execute("DELETE FROM agendamentos WHERE id = ?", (id,))
+    cursor.execute("DELETE FROM agendamentos WHERE id = %s", (id,))
     conexao.commit()
     conexao.close()
 
     flash("❌ Agendamento cancelado!")
     return redirect("/")
 
-# -----------------------------
-# Editar
-# -----------------------------
 @app.route("/editar/<int:id>")
 def editar(id):
-    conexao = sqlite3.connect("agenda.db")
+    conexao = conectar()
     cursor = conexao.cursor()
-    cursor.execute("SELECT * FROM agendamentos WHERE id = ?", (id,))
+    cursor.execute("SELECT * FROM agendamentos WHERE id = %s", (id,))
     agendamento = cursor.fetchone()
     conexao.close()
 
@@ -196,19 +174,16 @@ def editar(id):
         data_minima=date.today().isoformat()
     )
 
-# -----------------------------
-# Atualizar (exige código)
-# -----------------------------
 @app.route("/atualizar/<int:id>", methods=["POST"])
 def atualizar(id):
     codigo = request.form.get("codigo", "").strip()
     data_str = request.form["data"]
     horario = request.form["horario"]
 
-    conexao = sqlite3.connect("agenda.db")
+    conexao = conectar()
     cursor = conexao.cursor()
 
-    cursor.execute("SELECT codigo FROM agendamentos WHERE id = ?", (id,))
+    cursor.execute("SELECT codigo FROM agendamentos WHERE id = %s", (id,))
     row = cursor.fetchone()
     if not row:
         conexao.close()
@@ -239,7 +214,7 @@ def atualizar(id):
 
     cursor.execute("""
         SELECT * FROM agendamentos
-        WHERE data = ? AND horario = ? AND id != ?
+        WHERE data = %s AND horario = %s AND id != %s
     """, (data_str, horario, id))
     if cursor.fetchone():
         conexao.close()
@@ -247,7 +222,7 @@ def atualizar(id):
         return redirect("/")
 
     cursor.execute(
-        "UPDATE agendamentos SET data = ?, horario = ? WHERE id = ?",
+        "UPDATE agendamentos SET data = %s, horario = %s WHERE id = %s",
         (data_str, horario, id)
     )
     conexao.commit()
@@ -256,12 +231,9 @@ def atualizar(id):
     flash("✏️ Agendamento atualizado!")
     return redirect("/")
 
-# -----------------------------
-# Relatório em CSV (evidência de uso)
-# -----------------------------
 @app.route("/relatorio")
 def relatorio():
-    conexao = sqlite3.connect("agenda.db")
+    conexao = conectar()
     cursor = conexao.cursor()
     cursor.execute("""
         SELECT id, nome, rua, numero_casa, data, horario
@@ -282,10 +254,6 @@ def relatorio():
         headers={"Content-Disposition": "attachment; filename=relatorio_agendamentos.csv"}
     )
 
-# -----------------------------
-# RODAR NO RENDER (ESSENCIAL)
-# -----------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
