@@ -31,6 +31,16 @@ def criar_banco():
             codigo TEXT NOT NULL DEFAULT ''
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS feedbacks (
+            id SERIAL PRIMARY KEY,
+            nome TEXT NOT NULL,
+            rua TEXT NOT NULL DEFAULT '',
+            numero_casa TEXT NOT NULL DEFAULT '',
+            mensagem TEXT NOT NULL,
+            criado_em TIMESTAMP NOT NULL DEFAULT NOW()
+        )
+    """)
     conexao.commit()
     conexao.close()
 
@@ -57,6 +67,14 @@ def index():
         (mes_atual + "%",)
     )
     total_mes = cursor.fetchone()[0]
+
+    cursor.execute("""
+        SELECT nome, rua, numero_casa, mensagem, criado_em
+        FROM feedbacks
+        ORDER BY criado_em DESC
+        LIMIT 10
+    """)
+    feedbacks = cursor.fetchall()
     conexao.close()
 
     ultimo = None
@@ -81,7 +99,8 @@ def index():
         horarios=HORARIOS_DISPONIVEIS,
         data_minima=date.today().isoformat(),
         total_mes=total_mes,
-        ultimo=ultimo
+        ultimo=ultimo,
+        feedbacks=feedbacks,
     )
 
 @app.route("/agenda", methods=["POST"])
@@ -231,6 +250,39 @@ def atualizar(id):
     flash("✏️ Agendamento atualizado!")
     return redirect("/")
 
+# -----------------------------
+# Feedback dos moradores
+# -----------------------------
+@app.route("/feedback", methods=["GET"])
+def feedback_form():
+    return render_template("feedback.html")
+
+@app.route("/feedback", methods=["POST"])
+def feedback_enviar():
+    nome = request.form["nome"].strip()
+    rua = request.form.get("rua", "").strip()
+    numero_casa = request.form.get("numero_casa", "").strip()
+    mensagem = request.form["mensagem"].strip()
+
+    if not nome or not mensagem:
+        flash("⚠️ Preencha nome e mensagem para enviar o feedback")
+        return redirect("/feedback")
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+    cursor.execute(
+        "INSERT INTO feedbacks (nome, rua, numero_casa, mensagem) VALUES (%s, %s, %s, %s)",
+        (nome, rua, numero_casa, mensagem)
+    )
+    conexao.commit()
+    conexao.close()
+
+    flash("✅ Obrigado pelo seu feedback!")
+    return redirect("/")
+
+# -----------------------------
+# Relatórios em CSV (evidência de uso)
+# -----------------------------
 @app.route("/relatorio")
 def relatorio():
     conexao = conectar()
@@ -252,6 +304,29 @@ def relatorio():
         saida.getvalue(),
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment; filename=relatorio_agendamentos.csv"}
+    )
+
+@app.route("/relatorio-feedback")
+def relatorio_feedback():
+    conexao = conectar()
+    cursor = conexao.cursor()
+    cursor.execute("""
+        SELECT id, nome, rua, numero_casa, mensagem, criado_em
+        FROM feedbacks
+        ORDER BY criado_em
+    """)
+    linhas = cursor.fetchall()
+    conexao.close()
+
+    saida = io.StringIO()
+    escritor = csv.writer(saida)
+    escritor.writerow(["ID", "Nome", "Rua", "Número da casa", "Mensagem", "Data/Hora"])
+    escritor.writerows(linhas)
+
+    return Response(
+        saida.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=relatorio_feedbacks.csv"}
     )
 
 if __name__ == "__main__":
