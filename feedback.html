@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Deixar Feedback</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+<h1>Deixar Feedback</h1>
+<p class="subtitulo">Conte como está sendo usar o agendamento da quadra</p>
+
+{% with messages = get_flashed_messages() %}
+  {% for msg in messages %}
+    <div class="mensagem {{ 'erro' if '⚠️' in msg else 'sucesso' }}">{{ msg }}</div>
+  {% endfor %}
+{% endwith %}
+
+<form action="/feedback" method="post">
+    <label>Nome</label>
+    <input type="text" name="nome" required>
+
+    <label>Rua</label>
+    <input type="text" name="rua">
+
+    <label>Número da casa</label>
+    <input type="text" name="numero_casa">
+
+    <label>Sua mensagem</label>
+    <textarea name="mensagem" rows="4" required></textarea>
+
+    <button type="submit">Enviar feedback</button>
+</form>
+
+<a class="voltar" href="/">← Voltar</a>
+
+</div>
+
+</body>
+</html>
