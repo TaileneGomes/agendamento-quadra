@@ -78,7 +78,33 @@
 <div class="vazio">Nenhum agendamento ainda. Reserve a quadra acima.</div>
 {% endif %}
 
-<a class="voltar" href="/relatorio">Baixar relatório (CSV)</a>
+<div class="rodape-lista">
+    <h2>O que os moradores estão dizendo</h2>
+</div>
+
+{% if feedbacks %}
+<ul class="lista-feedbacks">
+{% for fb in feedbacks %}
+<li class="feedback-item">
+    <div class="feedback-cabecalho">
+        <strong>{{ fb[0] }}</strong>
+        {% if fb[1] %}<span>{{ fb[1] }}{% if fb[2] %}, nº {{ fb[2] }}{% endif %}</span>{% endif %}
+    </div>
+    <p class="feedback-mensagem">{{ fb[3] }}</p>
+    <span class="feedback-data">{{ fb[4].strftime('%d/%m/%Y %H:%M') }}</span>
+</li>
+{% endfor %}
+</ul>
+{% else %}
+<div class="vazio">Nenhum feedback ainda.</div>
+{% endif %}
+
+<a class="botao-secundario" href="/feedback">Deixar um feedback</a>
+
+<div class="links-relatorio">
+    <a class="voltar" href="/relatorio">Baixar agendamentos (CSV)</a>
+    <a class="voltar" href="/relatorio-feedback">Baixar feedbacks (CSV)</a>
+</div>
 
 </div>
 
