@@ -71,7 +71,7 @@ label {
   margin-bottom: 6px;
 }
 
-input, select {
+input, select, textarea {
   width: 100%;
   padding: 11px 12px;
   margin-bottom: 16px;
@@ -80,9 +80,11 @@ input, select {
   background: var(--fundo);
   font-size: 0.95rem;
   color: var(--texto);
+  font-family: inherit;
+  resize: vertical;
 }
 
-input:focus, select:focus {
+input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--verde);
   background: var(--superficie);
@@ -225,7 +227,7 @@ li {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin: 24px 0 12px;
 }
 
 .contador {
@@ -238,8 +240,61 @@ li {
 
 .voltar {
   display: inline-block;
-  margin-top: 16px;
   color: var(--texto-suave);
   font-size: 0.9rem;
   text-decoration: none;
+}
+
+.lista-feedbacks .feedback-item {
+  border-left: 4px solid var(--terracota);
+  display: block;
+}
+
+.feedback-cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.feedback-cabecalho strong {
+  font-size: 0.95rem;
+}
+
+.feedback-cabecalho span {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.feedback-mensagem {
+  margin: 6px 0 4px;
+  font-size: 0.9rem;
+  color: var(--texto);
+}
+
+.feedback-data {
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+}
+
+.botao-secundario {
+  display: block;
+  text-align: center;
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--verde);
+  color: var(--verde);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.links-relatorio {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
